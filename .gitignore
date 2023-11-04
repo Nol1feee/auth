@@ -1,2 +1,3 @@
 .idea
-/bin/
+auth/bin/
+chat-server/bin/
