@@ -23,6 +23,7 @@ generate-auth-api:
 	api/auth_v1/auth.proto
 
 build:
+
 	GOOS=linux GOARCH=amd64 go build -o ./bin/service_linux cmd/main.go
 
 copy-to-server:

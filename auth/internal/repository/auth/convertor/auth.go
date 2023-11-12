@@ -1,14 +1,14 @@
 package convertor
 
 import (
-	model "github.com/Nol1feee/CLI-chat/auth/internal/repository/auth/model"
-	modelServ "github.com/Nol1feee/CLI-chat/auth/internal/service/auth/model"
+	"github.com/Nol1feee/CLI-chat/auth/internal/model"
+	modelRepo "github.com/Nol1feee/CLI-chat/auth/internal/repository/auth/model"
 )
 
-func ToRepoFromService(serv *modelServ.UserServ) *model.User {
-	return &model.User{UserInfo: &model.UserInfo{
-		Name:  serv.UserInfo.Name,
-		Email: serv.UserInfo.Email,
-		Role:  serv.UserInfo.Role,
-	}, Password: serv.Password, PasswordConfirm: serv.PasswordConfirm}
+func ToRepoFromService(req *model.UserInfo) *modelRepo.UserInfo {
+	return &modelRepo.UserInfo{
+		Name:  req.Name,
+		Email: req.Email,
+		Role:  req.Role,
+	}
 }

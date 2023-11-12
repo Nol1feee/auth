@@ -1,13 +1,16 @@
-package service
+package auth
 
 import (
 	"github.com/Nol1feee/CLI-chat/auth/internal/repository"
+	"github.com/Nol1feee/CLI-chat/auth/internal/service"
 )
 
-type serv struct {
-	authRepository repository.AuthRepository
+var _ service.AuthService = (*Serv)(nil)
+
+type Serv struct {
+	AuthRepository repository.AuthRepository
 }
 
-func NewService(authRepository repository.AuthRepository) repository.AuthRepository {
-	return authRepository
+func NewService(repo repository.AuthRepository) service.AuthService {
+	return &Serv{AuthRepository: repo}
 }
