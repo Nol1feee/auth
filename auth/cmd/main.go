@@ -2,39 +2,47 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"github.com/Nol1feee/CLI-chat/auth/internal/api/auth"
+	"github.com/Nol1feee/CLI-chat/auth/internal/config"
 	authRepo "github.com/Nol1feee/CLI-chat/auth/internal/repository/auth"
 	authServ "github.com/Nol1feee/CLI-chat/auth/internal/service/auth"
 	desc "github.com/Nol1feee/CLI-chat/auth/pkg/auth_v1"
 	_ "github.com/go-sql-driver/mysql"
-	"github.com/kelseyhightower/envconfig"
+	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"log"
 	"net"
-)
-
-const (
-	grpcPort = 50051
 )
 
 func main() {
 	ctx := context.Background()
 
-	var config authRepo.Config
-	if err := envconfig.Process("db", &config); err != nil {
-		logrus.Fatal("main - process", err)
+	err := config.Load("../.env")
+	if err != nil {
+		log.Fatal(err)
 	}
 
-	con, err := authRepo.NewPostgresDB(config, ctx)
+	pgCfg, err := config.NewPGConfig()
 	if err != nil {
-		logrus.Fatal(err)
+		log.Fatal(err)
 	}
+
+	cfxGRPC, err := config.NewGRPCConfig()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	con, err := pgxpool.Connect(ctx, pgCfg.DSN())
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	defer con.Close()
 	logrus.Info("DB is up")
 
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", grpcPort))
+	lis, err := net.Listen("tcp", cfxGRPC.GRPCAdress())
 	if err != nil {
 		logrus.Fatal(err)
 	}

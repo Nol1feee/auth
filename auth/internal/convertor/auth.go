@@ -42,6 +42,8 @@ func ToInfoRepoFromService(req *model.UserInfo) *modelRepo.UserInfo {
 	}
 }
 
+// todo некоторые функции переместить в другие конверторы
+
 func ToUpdateRepoFromService(req *model.UserUpdate) *modelRepo.UserUpdate {
 	return &modelRepo.UserUpdate{
 		UserInfo: ToInfoRepoFromService(req.UserInfo),

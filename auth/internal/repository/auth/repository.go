@@ -2,7 +2,6 @@ package auth
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"github.com/Nol1feee/CLI-chat/auth/internal/repository"
 	"github.com/Nol1feee/CLI-chat/auth/internal/repository/auth/model"
@@ -26,29 +25,6 @@ const (
 )
 
 // TODO перенести куда-то
-
-type Config struct {
-	Host     string
-	Port     string
-	Name     string
-	User     string
-	Password string
-	SSLMode  string
-}
-
-// TODO перенести куда-то
-
-func NewPostgresDB(cfg Config, ctx context.Context) (*pgxpool.Pool, error) {
-	dbDSN := fmt.Sprintf("host=%s port=%s dbname=%s user=%s password=%s sslmode=%s", cfg.Host, cfg.Port,
-		cfg.Name, cfg.User, cfg.Password, cfg.SSLMode)
-
-	con, err := pgxpool.Connect(ctx, dbDSN)
-	if err != nil {
-		return &pgxpool.Pool{}, errors.New(fmt.Sprintf("repository - postgres - connect to DB | %s", err))
-	}
-
-	return con, nil
-}
 
 type User struct {
 	*pgxpool.Pool
