@@ -6,7 +6,7 @@ import (
 	"net"
 )
 
-type gRPCConfig interface {
+type GRPCConfig interface {
 	GRPCAdress() string
 }
 
