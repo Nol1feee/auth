@@ -37,8 +37,7 @@ func newServiceProvider() *serviceProvider {
 func (s *serviceProvider) GetPGConfig() config.PGConfig {
 	pgCfg, err := config.NewPGConfig()
 	if err != nil {
-		//fatal, т.к. смысл как-то обрабатывать ошибку/не фаталить, если мы не смогли запустить приложение
-		log.Fatal(err)
+		log.Fatalf("NewPGConfig | %s\n", err)
 	}
 	return pgCfg
 }
@@ -46,7 +45,7 @@ func (s *serviceProvider) GetPGConfig() config.PGConfig {
 func (s *serviceProvider) GetGRPCConfig() config.GRPCConfig {
 	cfgGRPC, err := config.NewGRPCConfig()
 	if err != nil {
-		log.Fatal(err)
+		log.Fatalf("NewGRPCConfig | %s\n", err)
 	}
 
 	return cfgGRPC
@@ -56,7 +55,6 @@ func (s *serviceProvider) PgPool(ctx context.Context) *pgxpool.Pool {
 	if s.pool == nil {
 		con, err := pgxpool.Connect(ctx, s.GetPGConfig().DSN())
 		if err != nil {
-			//fatal, т.к. сервис еще не запущен
 			log.Fatalf("connect to DB error | %s ", err)
 		}
 

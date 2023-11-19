@@ -1,12 +1,10 @@
 package closer
 
 import (
-	"github.com/sirupsen/logrus"
 	"log"
 	"os"
 	"os/signal"
 	"sync"
-	"time"
 )
 
 func NewCloser() *Closer {
@@ -26,7 +24,6 @@ func (c *Closer) New(sig ...os.Signal) {
 	ch := make(chan os.Signal, 1)
 	signal.Notify(ch, sig...)
 	<-ch
-	logrus.Info("под signal.notify")
 	signal.Stop(ch)
 	c.closeAll()
 }
@@ -58,7 +55,7 @@ func (c *Closer) closeAll() {
 				errs <- f()
 			}(f)
 		}
-		time.Sleep(time.Second * 5)
+
 		for i := 0; i < cap(errs); i++ {
 			if err := <-errs; err != nil {
 				log.Println("error returned from Closer")

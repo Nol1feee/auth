@@ -5,9 +5,9 @@ import (
 	"github.com/Nol1feee/CLI-chat/auth/internal/closer"
 	"github.com/Nol1feee/CLI-chat/auth/internal/config"
 	desc "github.com/Nol1feee/CLI-chat/auth/pkg/auth_v1"
-	"github.com/sirupsen/logrus"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
+	"log"
 	"net"
 	"syscall"
 )
@@ -30,7 +30,7 @@ func NewApp(ctx context.Context) (*App, error) {
 		return &App{}, err
 	}
 
-	logrus.Info("init all deps")
+	log.Println("init all deps")
 
 	return a, err
 }
@@ -80,7 +80,7 @@ func (a *App) Run() error {
 	go func() {
 		a.serviceProvider.closer.New(syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
 		a.serviceProvider.closer.Wait()
-		logrus.Info("успешно реализовал shutdown grace")
+		log.Println("graceful shutdown, bye!")
 		a.grpc.GracefulStop()
 	}()
 
@@ -88,7 +88,7 @@ func (a *App) Run() error {
 }
 
 func (a *App) runGrpcServer() error {
-	logrus.Info("listening %s adress", a.serviceProvider.GetGRPCConfig().GRPCAdress())
+	log.Printf("listening %s adress\n", a.serviceProvider.GetGRPCConfig().GRPCAdress())
 
 	lis, err := net.Listen("tcp", a.serviceProvider.GetGRPCConfig().GRPCAdress())
 	if err != nil {
@@ -102,5 +102,3 @@ func (a *App) runGrpcServer() error {
 
 	return nil
 }
-
-//todo add logs

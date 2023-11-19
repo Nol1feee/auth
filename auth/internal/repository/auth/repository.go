@@ -24,8 +24,6 @@ const (
 	roleAdmin = "admin"
 )
 
-// TODO перенести куда-то
-
 type User struct {
 	*pgxpool.Pool
 }
