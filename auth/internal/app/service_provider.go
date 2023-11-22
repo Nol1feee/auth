@@ -2,7 +2,7 @@ package app
 
 import (
 	"context"
-	"github.com/Nol1feee/CLI-chat/auth/internal/closer"
+	"github.com/Nol1feee/CLI-chat/auth/pkg/closer"
 
 	//"context"
 	"github.com/Nol1feee/CLI-chat/auth/internal/api/auth"

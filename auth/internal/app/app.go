@@ -2,9 +2,9 @@ package app
 
 import (
 	"context"
-	"github.com/Nol1feee/CLI-chat/auth/internal/closer"
 	"github.com/Nol1feee/CLI-chat/auth/internal/config"
 	desc "github.com/Nol1feee/CLI-chat/auth/pkg/auth_v1"
+	"github.com/Nol1feee/CLI-chat/auth/pkg/closer"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/reflection"
 	"log"
