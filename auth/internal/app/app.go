@@ -3,9 +3,11 @@ package app
 import (
 	"context"
 	"github.com/Nol1feee/CLI-chat/auth/internal/config"
+	"github.com/Nol1feee/CLI-chat/auth/internal/interceptor"
 	desc "github.com/Nol1feee/CLI-chat/auth/pkg/auth_v1"
 	"github.com/Nol1feee/CLI-chat/auth/pkg/closer"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
 	"log"
 	"net"
@@ -67,7 +69,10 @@ func (a *App) initServiceProvider(_ context.Context) error {
 	return nil
 }
 func (a *App) initGrpc(ctx context.Context) error {
-	a.grpc = grpc.NewServer()
+	a.grpc = grpc.NewServer(
+		grpc.Creds(insecure.NewCredentials()),
+		grpc.UnaryInterceptor(interceptor.InterceptorValidate),
+	)
 
 	reflection.Register(a.grpc)
 

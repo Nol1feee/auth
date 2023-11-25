@@ -5,6 +5,7 @@ package auth_v1;
 import "google/protobuf/timestamp.proto";
 import "google/protobuf/empty.proto";
 import "google/protobuf/wrappers.proto";
+import "validate/validate.proto";
 
 option go_package = "github.com/Nol1feee/CLI-chat/auth/pkg/auth_v1;auth_v1";
 
@@ -16,8 +17,8 @@ service auth_v1 {
 }
 
 message UserInfo {
-    string name = 1;
-    string email = 2;
+    string name = 1 [(validate.rules).string = {min_len: 3, max_len:30}];
+    string email = 2 [(validate.rules).string.email = true];
     role role = 3;
 }
 
@@ -37,7 +38,7 @@ message CreateResponse {
 }
 
 message GetRequest {
-    int64 id = 1;
+    int64 id = 1 [(validate.rules).int64.gte = 0];
 }
 
 message GetResponse {
@@ -54,5 +55,5 @@ message UpdateRequest {
 }
 
 message DeleteRequest {
-    int64 id = 1;
+    int64 id = 1 [(validate.rules).int64.gte = 0];
 }
