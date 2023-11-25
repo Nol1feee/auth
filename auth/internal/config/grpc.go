@@ -24,7 +24,7 @@ func NewGRPCConfig() (*grpcConfig, error) {
 	}
 
 	if len(cfx.Port) == 0 || len(cfx.Host) == 0 {
-		return &grpcConfig{}, errors.New("check Host and Port in .env file")
+		return &grpcConfig{}, errors.New("check GrpcHost and GrpcPort in .env file")
 	}
 
 	return &grpcConfig{
