@@ -6,10 +6,14 @@ import (
 	"github.com/Nol1feee/CLI-chat/auth/internal/interceptor"
 	desc "github.com/Nol1feee/CLI-chat/auth/pkg/auth_v1"
 	"github.com/Nol1feee/CLI-chat/auth/pkg/closer"
+	_ "github.com/Nol1feee/CLI-chat/auth/statik"
 	"github.com/grpc-ecosystem/grpc-gateway/v2/runtime"
+	"github.com/rakyll/statik/fs"
+	"github.com/rs/cors"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 	"google.golang.org/grpc/reflection"
+	"io"
 	"log"
 	"net"
 	"net/http"
@@ -24,8 +28,9 @@ const (
 
 type App struct {
 	serviceProvider *serviceProvider
-	grpc            *grpc.Server
+	grpcServer      *grpc.Server
 	httpServer      *http.Server
+	swaggerServer   *http.Server
 }
 
 func NewApp(ctx context.Context) (*App, error) {
@@ -48,6 +53,7 @@ func (a *App) initDeps(ctx context.Context) error {
 		a.initCloser,
 		a.initGrpc,
 		a.initHTTPServer,
+		a.initSwaggerServer,
 	}
 
 	for _, f := range inits {
@@ -55,6 +61,24 @@ func (a *App) initDeps(ctx context.Context) error {
 		if err != nil {
 			return err
 		}
+	}
+
+	return nil
+}
+
+func (a *App) initSwaggerServer(ctx context.Context) error {
+	staticFs, err := fs.New()
+	if err != nil {
+		return err
+	}
+
+	mux := http.NewServeMux()
+	mux.Handle("/", http.StripPrefix("/", http.FileServer(staticFs)))
+	mux.HandleFunc("/api.swagger.json", serverSwaggerFile("/api.swagger.json"))
+
+	a.swaggerServer = &http.Server{
+		Addr:    a.serviceProvider.GetSwaggerConfig().Address(),
+		Handler: mux,
 	}
 
 	return nil
@@ -74,14 +98,14 @@ func (a *App) initServiceProvider(_ context.Context) error {
 	return nil
 }
 func (a *App) initGrpc(ctx context.Context) error {
-	a.grpc = grpc.NewServer(
+	a.grpcServer = grpc.NewServer(
 		grpc.Creds(insecure.NewCredentials()),
 		grpc.UnaryInterceptor(interceptor.InterceptorValidate),
 	)
 
-	reflection.Register(a.grpc)
+	reflection.Register(a.grpcServer)
 
-	desc.RegisterAuthV1Server(a.grpc, a.serviceProvider.NewImplementation(ctx))
+	desc.RegisterAuthV1Server(a.grpcServer, a.serviceProvider.NewImplementation(ctx))
 
 	return nil
 }
@@ -98,9 +122,16 @@ func (a *App) initHTTPServer(ctx context.Context) error {
 		return err
 	}
 
+	corsMiddleware := cors.New(cors.Options{
+		AllowedOrigins:   []string{"*"},
+		AllowedMethods:   []string{"GET", "POST", "PUT", "DELETE", "OPTIONS"},
+		AllowedHeaders:   []string{"Accept", "Content-Type", "Content-Length", "Authorization"},
+		AllowCredentials: true,
+	})
+
 	a.httpServer = &http.Server{
 		Addr:    a.serviceProvider.GetHTTPConfig().HTTPAddress(),
-		Handler: mux,
+		Handler: corsMiddleware.Handler(mux),
 	}
 
 	return nil
@@ -111,12 +142,13 @@ func (a *App) Run(ctx context.Context) error {
 		a.serviceProvider.closer.New(syscall.SIGTERM, syscall.SIGINT, syscall.SIGKILL)
 		a.serviceProvider.closer.Wait()
 		log.Println("graceful shutdown, bye!")
-		a.grpc.GracefulStop()
+		a.grpcServer.GracefulStop()
 		a.httpServer.Shutdown(ctx)
+		a.swaggerServer.Shutdown(ctx)
 	}()
 
 	wg := sync.WaitGroup{}
-	wg.Add(2)
+	wg.Add(3)
 
 	go func() {
 		defer wg.Done()
@@ -136,7 +168,27 @@ func (a *App) Run(ctx context.Context) error {
 		}
 	}()
 
+	go func() {
+		defer wg.Done()
+
+		err := a.runSwaggerServer()
+		if err != nil {
+			log.Fatalf("Failed to run SWAGGER server | %s", err)
+		}
+	}()
+
 	wg.Wait()
+
+	return nil
+}
+
+func (a *App) runSwaggerServer() error {
+	log.Printf("swagger server is running on %s\n", a.serviceProvider.GetSwaggerConfig().Address())
+
+	err := a.swaggerServer.ListenAndServe()
+	if err != nil && err != http.ErrServerClosed {
+		return err
+	}
 
 	return nil
 }
@@ -149,7 +201,7 @@ func (a *App) runGrpcServer() error {
 		return err
 	}
 
-	err = a.grpc.Serve(lis)
+	err = a.grpcServer.Serve(lis)
 	if err != nil {
 		return err
 	}
@@ -166,4 +218,44 @@ func (a *App) runHTTPServer() error {
 	}
 
 	return nil
+}
+
+func serverSwaggerFile(path string) http.HandlerFunc {
+	return func(w http.ResponseWriter, r *http.Request) {
+		log.Printf("Serving swagger file: %s", path)
+
+		statikFs, err := fs.New()
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		log.Printf("Open swagger file: %s", path)
+
+		file, err := statikFs.Open(path)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+		defer file.Close()
+
+		log.Printf("Read swagger file: %s", path)
+
+		content, err := io.ReadAll(file)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		log.Printf("Write swagger file: %s", path)
+
+		w.Header().Set("Content-Type", "application/json")
+		_, err = w.Write(content)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
+
+		log.Printf("Served swagger file: %s", path)
+	}
 }

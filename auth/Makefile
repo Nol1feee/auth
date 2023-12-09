@@ -4,15 +4,22 @@ LOCAL_BIN:=$(CURDIR)/bin
 LOCAL_MIGRATION_DIR=./migrations
 LOCAL_MIGRATION_DSN="host=localhost port=$(DB_PORT) dbname=$(DB_NAME) user=$(DB_USER) password=$(DB_PASSWORD) sslmode=disable"
 
-install-deps-lint:
+install-deps:
 	GOBIN=$(LOCAL_BIN) go install google.golang.org/protobuf/cmd/protoc-gen-go@v1.28.1
 	GOBIN=$(LOCAL_BIN) go install -mod=mod google.golang.org/grpc/cmd/protoc-gen-go-grpc@v1.2
 	GOBIN=$(LOCAL_BIN) go install github.com/golangci/golangci-lint/cmd/golangci-lint@v1.53.3
 	GOBIN=$(LOCAL_BIN) go install github.com/pressly/goose/v3/cmd/goose@v3.14.0
 	GOBIN=$(LOCAL_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-grpc-gateway@v2.15.2
+	GOBIN=$(LOCAL_BIN) go install github.com/grpc-ecosystem/grpc-gateway/v2/protoc-gen-openapiv2@v2.15.2
+	GOBIN=$(LOCAL_BIN) go install github.com/rakyll/statik@v0.1.7
 
 lint:
 	$(LOCAL_BIN)/golangci-lint run --config .golangci.pipeline.yaml
+
+generate:
+	mkdir -p pkg/swagger
+	make generate-auth-api
+	$(LOCAL_BIN)/statik -src=pkg/swagger/ -include='*.css,*.html,*.js,*.json,*.png'
 
 generate-auth-api:
 	mkdir -p pkg/auth_v1
@@ -25,10 +32,11 @@ generate-auth-api:
     --plugin=protoc-gen-validate=bin/protoc-gen-validate \
     --grpc-gateway_out=pkg/auth_v1 --grpc-gateway_opt=paths=source_relative \
     --plugin=protoc-gen-grpc-gateway=bin/protoc-gen-grpc-gateway \
-	api/auth_v1/auth.proto
+	--openapiv2_out=allow_merge=true,merge_file_name=api:pkg/swagger \
+  	--plugin=protoc-gen-openapiv2=bin/protoc-gen-openapiv2 \
+  	api/auth_v1/auth.proto
 
 build:
-
 	GOOS=linux GOARCH=amd64 go build -o ./bin/service_linux cmd/main.go
 
 copy-to-server:
@@ -60,6 +68,12 @@ vendor-proto:
 			mkdir -p  vendor.protogen/google/ &&\
 			mv vendor.protogen/googleapis/google/api vendor.protogen/google &&\
 			rm -rf vendor.protogen/googleapis ;\
+		fi
+		@if [ ! -d vendor.protogen/protoc-gen-openapiv2 ]; then \
+			mkdir -p vendor.protogen/protoc-gen-openapiv2/options &&\
+			git clone https://github.com/grpc-ecosystem/grpc-gateway vendor.protogen/openapiv2 &&\
+			mv vendor.protogen/openapiv2/protoc-gen-openapiv2/options/*.proto vendor.protogen/protoc-gen-openapiv2/options &&\
+			rm -rf vendor.protogen/openapiv2 ;\
 		fi
 
 #docker-build-and-push:

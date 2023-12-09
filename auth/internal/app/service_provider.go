@@ -35,6 +35,14 @@ func newServiceProvider() *serviceProvider {
 	return &serviceProvider{}
 }
 
+func (s *serviceProvider) GetSwaggerConfig() config.SwaggerCfg {
+	cfg, err := config.NewSwaggerConfig()
+	if err != nil {
+		log.Fatalf("NewSwaggerConfig | %s\n", err)
+	}
+	return cfg
+}
+
 func (s *serviceProvider) GetPGConfig() config.PGConfig {
 	pgCfg, err := config.NewPGConfig()
 	if err != nil {
