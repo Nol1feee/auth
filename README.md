@@ -1,2 +1,6 @@
-# CLI-chat
-[![Typing SVG](https://readme-typing-svg.herokuapp.com?color=%2336BCF7&lines=In+progress!)](https://git.io/typing-svg)
+<div align="center">
+    <h1>gRPC auth</h1>
+    <h5>
+      Учебный проект, благодаря которому я познакомился с gRPC, деплоем, миграциями, свагером, zap'ом, cobra и несколькими новыми паттернами!
+    </h5>
+</div>
